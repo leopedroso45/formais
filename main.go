@@ -37,14 +37,16 @@ func main() {
 			fmt.Printf(Red, "A palavra foi recusada\n")
 			fmt.Println("-------------------------------")
 		}
-		fmt.Println("Gostaria de testar uma nova entrada? digite 'S' para Sim e 'N' para nao")
+		fmt.Println("Gostaria de testar uma nova entrada? [S]im | [N]ao ")
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			resposta := scanner.Text()
-			if resposta == "S" {
+			if resposta == "S" || resposta == "s" {
 				testar = true
-			} else {
+			} else if resposta == "N" || resposta == "n" {
 				testar = false
+			} else {
+				testar = true
 			}
 			break
 		}
@@ -56,6 +58,33 @@ func main() {
 	aut = criaFTMinimi(aut, result)
 	aut = verificaFinais(aut)
 	exibirAutomatoMinimizado(aut)
+
+	testar = true
+	for testar {
+		fmt.Println("-------------------------------")
+		fmt.Printf(Yellow, "Digite uma entrada para teste:\n")
+		if recebeEntradaMinimazada(aut) {
+			fmt.Printf(Green, "A palavra foi aceita\n")
+			fmt.Println("-------------------------------")
+		} else {
+			fmt.Printf(Red, "A palavra foi recusada\n")
+			fmt.Println("-------------------------------")
+		}
+		fmt.Println("Gostaria de testar uma nova entrada? [S]im | [N]ao ")
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			resposta := scanner.Text()
+			if resposta == "S" || resposta == "s" {
+				testar = true
+			} else if resposta == "N" || resposta == "n" {
+				testar = false
+			} else {
+				testar = true
+			}
+			break
+		}
+
+	}
 
 }
 
@@ -79,6 +108,42 @@ func recebeEntrada(automato automato.Automato) bool {
 	}
 	for _, estado := range automato.EstadosFinais {
 		if estado == atualEstado {
+			status = true
+		}
+	}
+	if status {
+		return true
+	} else {
+		return false
+	}
+
+	return status
+}
+
+func recebeEntradaMinimazada(automato automato.Automato) bool {
+	var entrada string
+	atualEstado := automato.EstadoInicial
+	status := false
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		entrada = scanner.Text()
+		break
+	}
+	//aaa
+	//['a', 'a', 'a']
+	entradaArray := strings.Split(entrada, "")
+
+	for _, simbolo := range entradaArray {
+		transicao := atualEstado + simbolo                        //Q0a
+		atualEstado = automato.FuncTransicaoMinimizada[transicao] //Q0a -> Q0
+	}
+	for _, estado := range automato.NovosEstadosFinais {
+		fpart := atualEstado[:2]
+		spart := atualEstado[2:]
+		if estado == atualEstado {
+			status = true
+		} else if estado == spart+fpart {
 			status = true
 		}
 	}
@@ -287,6 +352,7 @@ func exibirAutomato(aut automato.Automato) {
 
 func exibirAutomatoMinimizado(aut automato.Automato) {
 	fmt.Printf(Teal, "-------------------------------\n")
+	fmt.Printf(Green, "Automato Minimizado:\n")
 	fmt.Printf(Teal, "Alfabeto:")
 	fmt.Println(aut.Alfabeto)
 	fmt.Printf(Teal, "Estados do Autômato:")
@@ -379,8 +445,11 @@ func verificaEquivalencia(aut automato.Automato) (automato.Automato, map[string]
 			if !contidoEmPais {
 				ppart := filho[:2]
 				spart := filho[2:]
-				filhoInvertido := spart+ppart
+				filhoInvertido := spart + ppart
 				_, contidoEmPais = Find(pais, filhoInvertido)
+				if contidoEmPais {
+					filho = filhoInvertido
+				}
 			}
 			resultFilhos = append(resultFilhos, contidoEmPais)
 		}
@@ -443,6 +512,8 @@ func verificarEstados(aut automato.Automato) []string {
 			}
 		}
 	}
+	fmt.Printf(Red, "Estados não equivalentes: \n")
+	fmt.Println(rejeitados)
 	return pais
 }
 
