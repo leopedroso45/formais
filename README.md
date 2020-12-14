@@ -17,7 +17,7 @@ verifique se o snap esta instalado, caso não: sudo apt install snapd
 9. Abra o gitHub para obter o código fonte, abra o arquivo main na sua IDE ou por comando no linux: go run main.go
 esse comando deve ser utilizado no terminal da IDE também, se for o caso.
 
-#Windows:
+# Windows:
 1. Abra o link: https://golang.org/dl/
 3. Selecione a opção de dowload para o windows
 4. após ter tudo instalado, abra sua IDE  e o arquivo e execute o comando: go run main.go no terminal
