@@ -9,12 +9,11 @@ import (
 )
 
 const (
-
-	Green = "\033[1;32m%s\033[0m"
-	Red   = "\033[1;31m%s\033[0m"
+	Green  = "\033[1;32m%s\033[0m"
+	Red    = "\033[1;31m%s\033[0m"
 	Purple = "\033[1;34m%s\033[0m"
-	Pink = "\033[1;35m%s\033[0m"
-	Yellow  = "\033[1;33m%s\033[0m"
+	Pink   = "\033[1;35m%s\033[0m"
+	Yellow = "\033[1;33m%s\033[0m"
 	Teal   = "\033[1;36m%s\033[0m"
 )
 
@@ -50,6 +49,12 @@ func main() {
 
 	}
 
+	aut, result := verificaEquivalencia(automatoDoCara)
+	aut = criaAutomatoMinimizado(aut)
+	aut = criaFTMinimi(aut, result)
+	aut = verificaFinais(aut)
+	exibirAutomatoMinimizado(aut)
+
 }
 
 func recebeEntrada(automato automato.Automato) bool {
@@ -84,6 +89,14 @@ func recebeEntrada(automato automato.Automato) bool {
 	return status
 }
 
+func resolveTransicao(regraTransicao string) (result1, simbol string) {
+	regraTransicaoArray := strings.Split(regraTransicao, "")
+	simbol = regraTransicaoArray[len(regraTransicaoArray)/2]
+	regraTransicaoArray[len(regraTransicaoArray)/2] = "/"
+	result1 = strings.Join(regraTransicaoArray, "")
+	return
+}
+
 func addFuncTransicao(alfabeto []string) map[string]string {
 	funcTrans := make(map[string]string)
 	//Q0a -> Q0
@@ -100,13 +113,10 @@ func addFuncTransicao(alfabeto []string) map[string]string {
 			//Q01Q0 EXISTE simbolo
 			//simbolos 0 || 1
 
-			regraTransicaoArray := strings.Split(regraTransicao, "")
-			simbol := regraTransicaoArray[len(regraTransicaoArray)/2]
-			regraTransicaoArray[len(regraTransicaoArray)/2] = "/"
-			result1 := strings.Join(regraTransicaoArray, "")
+			result1, simbol := resolveTransicao(regraTransicao)
 
 			for _, simbolo := range alfabeto {
-				if simbolo == simbol{
+				if simbolo == simbol {
 					parts := strings.Split(result1, "/")
 					estadoAtual := parts[0]
 					estadoDestino := parts[1]
@@ -262,26 +272,193 @@ func criarAutomato() (aut automato.Automato) {
 func exibirAutomato(aut automato.Automato) {
 	fmt.Printf(Teal, "-------------------------------\n")
 	fmt.Printf(Teal, "Alfabeto:")
-	fmt.Println("Alfabeto:", aut.Alfabeto)
+	fmt.Println(aut.Alfabeto)
 	fmt.Printf(Teal, "Estados do Autômato:")
-	fmt.Println("Estados do Autômato:", aut.Estados)
+	fmt.Println(aut.Estados)
 	fmt.Printf(Teal, "Função de transição:")
-	fmt.Println("Função de transição:", aut.FuncTransicao)
+	fmt.Println(aut.FuncTransicao)
 	fmt.Printf(Teal, "Estado Inicial:")
-	fmt.Println("Estado Inicial:", aut.EstadoInicial)
+	fmt.Println(aut.EstadoInicial)
 	fmt.Printf(Teal, "Conjunto de estados finais:")
-	fmt.Println("Conjunto de estados finais:", aut.EstadosFinais)
+	fmt.Println(aut.EstadosFinais)
 }
 
-//Remover estados que não recebem
-//func verificarEstadosNaoAlcancados(aut automato.Automato) (aut2 automato.Automato) {
+func exibirAutomatoMinimizado(aut automato.Automato) {
+	fmt.Printf(Teal, "-------------------------------\n")
+	fmt.Printf(Teal, "Alfabeto:")
+	fmt.Println(aut.Alfabeto)
+	fmt.Printf(Teal, "Estados do Autômato:")
+	fmt.Println(aut.EstadosMinimizados)
+	fmt.Printf(Teal, "Função de transição:")
+	fmt.Println(aut.FuncTransicaoMinimizada)
+	fmt.Printf(Teal, "Estado Inicial:")
+	fmt.Println(aut.EstadoInicial)
+	fmt.Printf(Teal, "Conjunto de estados finais:")
+	fmt.Println(aut.NovosEstadosFinais)
+}
 
+func verificaFinais(aut automato.Automato) automato.Automato {
+	for _, ef := range aut.EstadosFinais {
+		for _, em := range aut.EstadosMinimizados {
+			if strings.Contains(em, ef) {
+				teste := strings.Split(em, ef)
+				for i, efe := range aut.EstadosFinais {
+					if efe == teste[0] {
+						aut.NovosEstadosFinais = append(aut.NovosEstadosFinais, em)
+						aut.EstadosFinais[i] = "?"
+					}
+				}
+			}
+		}
+	}
+	return aut
+}
 
-	//for _, estado1 := range aut.Estados {
-	//
-	//	for _, estado2 := range aut.Estados {
+func criaFTMinimi(aut automato.Automato, result map[string][]string) automato.Automato {
+	aut.FuncTransicaoMinimizada = make(map[string]string)
+	for _, novoEstado := range aut.EstadosMinimizados {
+		if len(novoEstado) <= 2 {
+			for _, simbolo := range aut.Alfabeto {
+				estadoAlterar := aut.FuncTransicao[novoEstado+simbolo]
+				for _, em := range aut.EstadosMinimizados {
+					if strings.Contains(em, estadoAlterar) {
+						aut.FuncTransicaoMinimizada[novoEstado+simbolo] = em
+					}
+				}
+			}
+		} else if len(novoEstado) > 2 {
+			filhos := result[novoEstado]
+			for i, simbolo := range aut.Alfabeto {
+				aut.FuncTransicaoMinimizada[novoEstado+simbolo] = filhos[i]
+			}
+		}
+	}
+	return aut
+}
+
+func criaAutomatoMinimizado(aut automato.Automato) automato.Automato {
+	var result []bool
+	var foi bool
+	aut.EstadosMinimizados = append(aut.EstadosMinimizados, aut.NovosEstados...)
+	for _, estado := range aut.Estados {
+		for _, novoEstado := range aut.NovosEstados {
+			if strings.Contains(novoEstado, estado) {
+				result = append(result, true)
+			}
+			result = append(result, false)
+		}
+		for _, resul := range result {
+			if resul {
+				foi = true
+			}
+		}
+		if !foi {
+			aut.EstadosMinimizados = append(aut.EstadosMinimizados, estado)
+		}
+	}
+
+	return aut
+}
+
+func verificaEquivalencia(aut automato.Automato) (automato.Automato, map[string][]string) {
+	pais := verificarEstados(aut) //Q0/Q1
+	result := make(map[string][]string)
+	//Q0/Q1
+	for _, pai := range pais {
+		//parts := strings.Split(pai, "/")
+		pai1 := pai[:2]
+		pai2 := pai[2:]
+		result = verificaDoisaDois(pai1, pai2, aut, result)
+	}
+	for _, pai := range pais {
+		var resultFilhos []bool
+		filhos := result[pai]
+		for _, filho := range filhos {
+			_, contidoEmPais := Find(pais, filho)
+			resultFilhos = append(resultFilhos, contidoEmPais)
+		}
+		count := 0
+		for _, result := range resultFilhos {
+			if result {
+				count++
+			}
+		}
+		//if count == 2*len(aut.Alfabeto) {
+		if count == len(aut.Alfabeto) {
+			aut.NovosEstados = append(aut.NovosEstados, pai)
+		}
+
+	}
+
+	return aut, result
+}
+
+func verificarEstados(aut automato.Automato) []string {
+	var rejeitados []string
+	var pais []string
+	//var possiveisEquivalentes []string
+	//var Equivalentes []string
+
+	for _, estado1 := range aut.Estados {
+		for _, estado2 := range aut.Estados {
+			//for i:=j; i<len(aut.Estados)-1; i++{
+			_, found1Final := Find(aut.EstadosFinais, estado1)
+			_, found2Final := Find(aut.EstadosFinais, estado2)
+			if found1Final && found2Final && estado1 != estado2 {
+				//pode adicionar
+				//estado1estado2
+				pais = append(pais, estado1+estado2)
+			} else if !found1Final && found2Final && estado1 != estado2 {
+				//rejeita
+				rejeitados = append(rejeitados, estado1+estado2)
+			} else if found1Final && !found2Final && estado1 != estado2 {
+				//rejeita
+				rejeitados = append(rejeitados, estado1+estado2)
+			} else if !found1Final && !found2Final && estado1 != estado2 {
+				//pode adicionar
+				//estado1estado2
+				pais = append(pais, estado1+estado2)
+			}
+		}
+	}
+	return pais
+}
+
+func verificaDoisaDois(estado1, estado2 string, aut automato.Automato, result map[string][]string) map[string][]string {
+	var filhos []string
+
+	for _, simbolo := range aut.Alfabeto {
+
+		resposta := aut.FuncTransicao[estado1+simbolo]  //Q1
+		resposta2 := aut.FuncTransicao[estado2+simbolo] //Q2
+		filhos = append(filhos, resposta+resposta2)     //q1q2
+		//filhos = append(filhos, resposta2+resposta) //q2q1
+	}
+	result[estado1+estado2] = filhos
+	return result
+}
+
+func Find(slice []string, val string) (int, bool) {
+	for i, item := range slice {
+		if item == val {
+			return i, true
+		}
+	}
+	return -1, false
+}
+
+//func VerificaRepetidos(pais []string) []string{
+//	var paiCerto []string
+//	var jaVerificado []string
+//	for _, pai1 := range pais {
+//		for _, pai2 := range pais {
+//			_, foiii := Find(jaVerificado, pai2[:2])
+//			if strings.Contains(pai1, pai2[:2]) && !foiii{
+//				jaVerificado = append(jaVerificado, pai2)
+//				paiCerto = append(paiCerto, pai1)
+//			}
+//		}
+//	}
 //
-	//	}
-	//}
-
+//	return paiCerto
 //}
