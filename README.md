@@ -11,8 +11,8 @@ na página de downloads. Se não, então este não é um arquivo válido e você
 7. Você terá agora um diretório chamado go no diretório /usr/local. Em seguida, 
 altere recursivamente o proprietário e o grupo deste diretório para root: sudo chown -R root:root /usr/local/go
 
-## 8. Outra alternativa (minha favorita) é a instalação pelo snap através do comando: sudo snap install go --classic (
-## verifique se o snap esta instalado, caso não: sudo apt install snapd 
+### 8. Outra alternativa (minha favorita) é a instalação pelo snap através do comando: sudo snap install go --classic
+### verifique se o snap esta instalado, caso não: sudo apt install snapd 
 
 9. Abra o gitHub para obter o código fonte, abra o arquivo main na sua IDE ou por comando no linux: go run main.go
 esse comando deve ser utilizado no terminal da IDE também, se for o caso.
