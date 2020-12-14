@@ -17,8 +17,10 @@ const (
 	Teal   = "\033[1;36m%s\033[0m"
 )
 
-func main() {
+var verificados map[string]string
 
+func main() {
+	verificados = make(map[string]string)
 	fmt.Printf(Pink, "Bem vindo ao criador de AFD mais top das galaxia!\n")
 
 	testar := true
@@ -356,7 +358,6 @@ func criaAutomatoMinimizado(aut automato.Automato) automato.Automato {
 			aut.EstadosMinimizados = append(aut.EstadosMinimizados, estado)
 		}
 	}
-
 	return aut
 }
 
@@ -375,6 +376,12 @@ func verificaEquivalencia(aut automato.Automato) (automato.Automato, map[string]
 		filhos := result[pai]
 		for _, filho := range filhos {
 			_, contidoEmPais := Find(pais, filho)
+			if !contidoEmPais {
+				ppart := filho[:2]
+				spart := filho[2:]
+				filhoInvertido := spart+ppart
+				_, contidoEmPais = Find(pais, filhoInvertido)
+			}
 			resultFilhos = append(resultFilhos, contidoEmPais)
 		}
 		count := 0
@@ -387,10 +394,20 @@ func verificaEquivalencia(aut automato.Automato) (automato.Automato, map[string]
 		if count == len(aut.Alfabeto) {
 			aut.NovosEstados = append(aut.NovosEstados, pai)
 		}
-
 	}
-
 	return aut, result
+}
+
+func Verificou(estado1, estado2 string) bool {
+
+	if val, ok := verificados[estado2+estado1]; ok && val == estado1 {
+		return true
+	} else if val, ok = verificados[estado2+estado1]; ok && val == estado2 {
+		return true
+	} else if val, ok = verificados[estado1+estado2]; ok && val == estado1 {
+		return true
+	}
+	return false
 }
 
 func verificarEstados(aut automato.Automato) []string {
@@ -398,26 +415,31 @@ func verificarEstados(aut automato.Automato) []string {
 	var pais []string
 	//var possiveisEquivalentes []string
 	//var Equivalentes []string
-
+	//q0, q2
 	for _, estado1 := range aut.Estados {
+		//q1, q4
 		for _, estado2 := range aut.Estados {
 			//for i:=j; i<len(aut.Estados)-1; i++{
-			_, found1Final := Find(aut.EstadosFinais, estado1)
-			_, found2Final := Find(aut.EstadosFinais, estado2)
-			if found1Final && found2Final && estado1 != estado2 {
-				//pode adicionar
-				//estado1estado2
-				pais = append(pais, estado1+estado2)
-			} else if !found1Final && found2Final && estado1 != estado2 {
-				//rejeita
-				rejeitados = append(rejeitados, estado1+estado2)
-			} else if found1Final && !found2Final && estado1 != estado2 {
-				//rejeita
-				rejeitados = append(rejeitados, estado1+estado2)
-			} else if !found1Final && !found2Final && estado1 != estado2 {
-				//pode adicionar
-				//estado1estado2
-				pais = append(pais, estado1+estado2)
+			//q4, q2
+			if estado1 != estado2 && !Verificou(estado1, estado2) {
+				_, found1Final := Find(aut.EstadosFinais, estado1)
+				_, found2Final := Find(aut.EstadosFinais, estado2)
+				if found1Final && found2Final && estado1 != estado2 {
+					//pode adicionar
+					//estado1estado2
+					pais = append(pais, estado1+estado2)
+				} else if !found1Final && found2Final && estado1 != estado2 {
+					//rejeita
+					rejeitados = append(rejeitados, estado1+estado2)
+				} else if found1Final && !found2Final && estado1 != estado2 {
+					//rejeita
+					rejeitados = append(rejeitados, estado1+estado2)
+				} else if !found1Final && !found2Final && estado1 != estado2 {
+					//pode adicionar
+					//estado1estado2
+					pais = append(pais, estado1+estado2)
+				}
+				verificados[estado1+estado2] = estado2
 			}
 		}
 	}
@@ -446,19 +468,3 @@ func Find(slice []string, val string) (int, bool) {
 	}
 	return -1, false
 }
-
-//func VerificaRepetidos(pais []string) []string{
-//	var paiCerto []string
-//	var jaVerificado []string
-//	for _, pai1 := range pais {
-//		for _, pai2 := range pais {
-//			_, foiii := Find(jaVerificado, pai2[:2])
-//			if strings.Contains(pai1, pai2[:2]) && !foiii{
-//				jaVerificado = append(jaVerificado, pai2)
-//				paiCerto = append(paiCerto, pai1)
-//			}
-//		}
-//	}
-//
-//	return paiCerto
-//}
